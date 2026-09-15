@@ -126,36 +126,46 @@
     gap: 1rem;
   }
 
-  .date-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-bottom: 0.6rem;
-  }
-  .date-chip {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    background: rgba(165, 39, 31, 0.1);
+  .date-entry {
     border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 0.3rem 0.5rem 0.3rem 0.8rem;
-    font-size: 0.85rem;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.8rem;
+    position: relative;
   }
-  .date-chip button {
+  .date-entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.8rem;
+  }
+  .date-entry-header span {
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+  .remove-entry-btn {
     border: none;
     background: none;
     color: var(--red);
-    font-size: 1rem;
-    line-height: 1;
+    font-size: 0.82rem;
+    font-weight: 600;
     cursor: pointer;
     padding: 0;
   }
-  .date-add-row {
-    display: flex;
-    gap: 0.6rem;
+  .add-date-entry-btn {
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.6rem 1rem;
+    border: 1px dashed var(--line);
+    border-radius: 6px;
+    background: var(--paper);
+    color: var(--red);
+    cursor: pointer;
+    width: 100%;
   }
-  .date-add-row input { flex: 1; }
+  .add-date-entry-btn:hover { border-color: var(--red); }
   .btn-secondary {
     font-family: inherit;
     font-size: 0.88rem;
@@ -239,6 +249,11 @@
 <main>
   <form id="requestForm">
     <div class="field">
+      <label for="eventName">Event Name</label>
+      <input type="text" id="eventName" name="Event Name" required>
+    </div>
+
+    <div class="field">
       <label for="requester">Person Requesting</label>
       <input type="text" id="requester" name="Person Requesting" required>
     </div>
@@ -264,41 +279,12 @@
 
     <div class="field">
       <label>Date(s) Needed</label>
-      <div class="date-chips" id="dateChips"></div>
-      <div class="date-add-row">
-        <input type="date" id="dateInput">
-        <button type="button" class="btn-secondary" id="addDateBtn">Add date</button>
-      </div>
-      <input type="hidden" id="datesField" name="Date(s) Needed" required>
+      <p class="hint">Add a separate entry for each date, since the time and rooms can differ day to day.</p>
+      <div id="dateEntries"></div>
+      <button type="button" class="add-date-entry-btn" id="addEntryBtn">+ Add another date</button>
     </div>
 
-    <div class="time-row">
-      <div class="field">
-        <label for="startTime">Start Time</label>
-        <input type="time" id="startTime" name="Start Time" required>
-      </div>
-      <div class="field">
-        <label for="endTime">End Time</label>
-        <input type="time" id="endTime" name="End Time" required>
-      </div>
-    </div>
-
-    <div class="field">
-      <label>Room(s) Requesting</label>
-      <div class="checkbox-grid" id="roomOptions">
-        <label class="checkbox-item"><input type="checkbox" name="Room(s) Requesting" value="Sanctuary"> Sanctuary</label>
-        <label class="checkbox-item"><input type="checkbox" name="Room(s) Requesting" value="Conference Room"> Conference Room</label>
-        <label class="checkbox-item"><input type="checkbox" name="Room(s) Requesting" value="Mental Health Room"> Mental Health Room</label>
-        <label class="checkbox-item"><input type="checkbox" name="Room(s) Requesting" value="Fellowship Hall"> Fellowship Hall</label>
-        <label class="checkbox-item"><input type="checkbox" name="Room(s) Requesting" value="Choir Room"> Choir Room</label>
-        <label class="checkbox-item"><input type="checkbox" name="Room(s) Requesting" value="Classroom 1"> Classroom 1</label>
-        <label class="checkbox-item"><input type="checkbox" name="Room(s) Requesting" value="Classroom 2"> Classroom 2</label>
-        <label class="checkbox-item"><input type="checkbox" name="Room(s) Requesting" value="Classroom 3"> Classroom 3</label>
-        <label class="checkbox-item"><input type="checkbox" name="Room(s) Requesting" value="Bible Study Room"> Bible Study Room</label>
-      </div>
-    </div>
-
-    <p class="form-error" id="formError">Please fill out all fields, choose at least one date, and select at least one room.</p>
+    <p class="form-error" id="formError">Please fill out all fields, and make sure every date has a start time, end time, and at least one room selected.</p>
 
     <button type="submit" class="submit-btn" id="submitBtn">Submit Request</button>
   </form>
@@ -311,36 +297,64 @@
 
 <script>
   const FORMSPREE_URL = "https://formspree.io/f/xwlpeppl";
+  const ROOM_OPTIONS = [
+    "Sanctuary", "Conference Room", "Mental Health Room", "Fellowship Hall",
+    "Choir Room", "Classroom 1", "Classroom 2", "Classroom 3", "Bible Study Room"
+  ];
 
-  let selectedDates = [];
+  let entryCount = 0;
 
-  function renderDateChips() {
-    const wrap = document.getElementById("dateChips");
-    wrap.innerHTML = "";
-    selectedDates.forEach((d, i) => {
-      const chip = document.createElement("div");
-      chip.className = "date-chip";
-      const label = new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-      chip.innerHTML = `<span>${label}</span>`;
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.textContent = "×";
-      btn.onclick = () => { selectedDates.splice(i, 1); renderDateChips(); };
-      chip.appendChild(btn);
-      wrap.appendChild(chip);
-    });
-    document.getElementById("datesField").value = selectedDates.join(", ");
+  function addDateEntry() {
+    entryCount++;
+    const id = entryCount;
+    const wrap = document.getElementById("dateEntries");
+    const entry = document.createElement("div");
+    entry.className = "date-entry";
+    entry.dataset.entryId = id;
+    entry.innerHTML = `
+      <div class="date-entry-header">
+        <span>Date entry</span>
+        <button type="button" class="remove-entry-btn" data-remove="${id}">Remove</button>
+      </div>
+      <div class="field">
+        <label>Date</label>
+        <input type="date" class="entry-date" required>
+      </div>
+      <div class="time-row">
+        <div class="field">
+          <label>Start Time</label>
+          <input type="time" class="entry-start" required>
+        </div>
+        <div class="field">
+          <label>End Time</label>
+          <input type="time" class="entry-end" required>
+        </div>
+      </div>
+      <div class="field">
+        <label>Room(s) Requesting</label>
+        <div class="checkbox-grid">
+          ${ROOM_OPTIONS.map(r => `<label class="checkbox-item"><input type="checkbox" class="entry-room" value="${r}"> ${r}</label>`).join("")}
+        </div>
+      </div>
+    `;
+    wrap.appendChild(entry);
+    entry.querySelector('[data-remove]').onclick = () => {
+      entry.remove();
+      updateRemoveButtons();
+    };
+    updateRemoveButtons();
   }
 
-  document.getElementById("addDateBtn").onclick = () => {
-    const val = document.getElementById("dateInput").value;
-    if (val && !selectedDates.includes(val)) {
-      selectedDates.push(val);
-      selectedDates.sort();
-      renderDateChips();
-      document.getElementById("dateInput").value = "";
-    }
-  };
+  function updateRemoveButtons() {
+    const entries = document.querySelectorAll(".date-entry");
+    entries.forEach(entry => {
+      const btn = entry.querySelector(".remove-entry-btn");
+      btn.style.display = entries.length > 1 ? "block" : "none";
+    });
+  }
+
+  document.getElementById("addEntryBtn").onclick = addDateEntry;
+  addDateEntry(); // start with one
 
   const form = document.getElementById("requestForm");
   const errorEl = document.getElementById("formError");
@@ -349,13 +363,25 @@
     e.preventDefault();
     errorEl.classList.remove("show");
 
+    const eventName = document.getElementById("eventName").value.trim();
     const requester = document.getElementById("requester").value.trim();
     const ministry = document.getElementById("ministry").value;
-    const startTime = document.getElementById("startTime").value;
-    const endTime = document.getElementById("endTime").value;
-    const rooms = Array.from(document.querySelectorAll('input[name="Room(s) Requesting"]:checked')).map(cb => cb.value);
 
-    if (!requester || !ministry || selectedDates.length === 0 || !startTime || !endTime || rooms.length === 0) {
+    const entryEls = document.querySelectorAll(".date-entry");
+    const entries = [];
+    let valid = eventName && requester && ministry && entryEls.length > 0;
+
+    entryEls.forEach(el => {
+      const date = el.querySelector(".entry-date").value;
+      const start = el.querySelector(".entry-start").value;
+      const end = el.querySelector(".entry-end").value;
+      const rooms = Array.from(el.querySelectorAll(".entry-room:checked")).map(cb => cb.value);
+      if (!date || !start || !end || rooms.length === 0) valid = false;
+      entries.push({ date, start, end, rooms });
+    });
+
+    if (!valid) {
+      errorEl.textContent = "Please fill out all fields, and make sure every date has a start time, end time, and at least one room selected.";
       errorEl.classList.add("show");
       return;
     }
@@ -364,13 +390,16 @@
     submitBtn.disabled = true;
     submitBtn.textContent = "Sending...";
 
+    const dateDetails = entries.map((en, i) => {
+      const label = new Date(en.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      return `Date ${i + 1}: ${label}, ${en.start}–${en.end}, Rooms: ${en.rooms.join(", ")}`;
+    }).join("\n");
+
     const payload = {
+      "Event Name": eventName,
       "Person Requesting": requester,
       "Ministry": ministry,
-      "Date(s) Needed": selectedDates.join(", "),
-      "Start Time": startTime,
-      "End Time": endTime,
-      "Room(s) Requesting": rooms.join(", ")
+      "Date Details": dateDetails
     };
 
     try {
