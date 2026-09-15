@@ -282,78 +282,9 @@
   .modal-event.wedding, .modal-event.private { border-left-color: var(--gold); }
   .modal-event-title { font-weight: 600; font-size: 1rem; margin: 0 0 0.15rem; }
   .modal-event-meta { font-size: 0.87rem; color: var(--muted); margin: 0; }
-
-  .gate {
-    position: fixed;
-    inset: 0;
-    background: var(--paper);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
-    z-index: 100;
-  }
-  .gate-box {
-    background: var(--paper-raised);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 2rem;
-    max-width: 360px;
-    width: 100%;
-    text-align: center;
-  }
-  .gate-box p.gate-label {
-    color: var(--muted);
-    font-size: 0.9rem;
-    margin: 0 0 1rem;
-  }
-  .gate-box input {
-    width: 100%;
-    font-family: inherit;
-    font-size: 1rem;
-    padding: 0.6rem 0.7rem;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: var(--paper);
-    color: var(--ink);
-    margin-bottom: 0.8rem;
-    text-align: center;
-  }
-  .gate-box button {
-    width: 100%;
-    font-family: inherit;
-    font-size: 0.95rem;
-    font-weight: 700;
-    padding: 0.7rem;
-    border: none;
-    border-radius: 6px;
-    background: var(--red);
-    color: #fff;
-    cursor: pointer;
-  }
-  .gate-box button:hover { background: var(--gold); }
-  .gate-error {
-    color: var(--red);
-    font-size: 0.85rem;
-    margin-top: 0.6rem;
-    display: none;
-  }
-  .gate-error.show { display: block; }
-  #pageContent { display: none; }
 </style>
 </head>
 <body>
-
-<div class="gate" id="gate">
-  <div class="gate-box">
-    <p class="gate-label">This page is for New Hope auxiliaries only. Enter the access password to continue.</p>
-    <input type="password" id="gatePassword" placeholder="Password">
-    <button type="button" id="gateSubmit">Enter</button>
-    <p class="gate-error" id="gateError">Incorrect password. Please try again.</p>
-  </div>
-</div>
-
-<div id="pageContent">
 
 <header>
   <p class="eyebrow">NEW HOPE BAPTIST CHURCH</p>
@@ -384,34 +315,6 @@
     <div id="modalBody"></div>
   </div>
 </div>
-
-</div>
-
-<script>
-  // ---- ACCESS PASSWORD: change this to set/update the password ----
-  const PAGE_PASSWORD = "newhope2026";
-
-  function checkGate() {
-    if (sessionStorage.getItem("nh_gate_ok") === "1") {
-      document.getElementById("gate").style.display = "none";
-      document.getElementById("pageContent").style.display = "block";
-    }
-  }
-  document.getElementById("gateSubmit").onclick = () => {
-    const val = document.getElementById("gatePassword").value;
-    if (val === PAGE_PASSWORD) {
-      sessionStorage.setItem("nh_gate_ok", "1");
-      document.getElementById("gate").style.display = "none";
-      document.getElementById("pageContent").style.display = "block";
-    } else {
-      document.getElementById("gateError").classList.add("show");
-    }
-  };
-  document.getElementById("gatePassword").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") document.getElementById("gateSubmit").click();
-  });
-  checkGate();
-</script>
 
 <script>
   // ---- DATA: update this array to add/change bookings ----
